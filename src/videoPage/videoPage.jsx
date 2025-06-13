@@ -13,8 +13,8 @@ const VideoPage = () => {
                             muted
                             playsInline
                     >
-                        <source src="/video.webm" type="video/webm" />
                         <source src="/video.mov" type="video/mp4" />
+                        <source src="/video.webm" type="video/webm" />
                         Ваш браузер не поддерживает видео HTML5.
                     </video>
                 </div>

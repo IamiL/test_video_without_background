@@ -2,6 +2,69 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
+// Утилиты для логирования
+const getTimestamp = () => new Date().toISOString();
+const getClientInfo = (req) => {
+    return {
+        ip: req.connection.remoteAddress || req.socket.remoteAddress ||
+                (req.connection.socket ? req.connection.socket.remoteAddress : null),
+        userAgent: req.headers['user-agent'] || 'Unknown',
+        referer: req.headers.referer || 'Direct',
+        acceptLanguage: req.headers['accept-language'] || 'Unknown'
+    };
+};
+
+const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const logRequest = (req, status, filePath, error = null, fileSize = null) => {
+    const client = getClientInfo(req);
+    const timestamp = getTimestamp();
+
+    console.log(`\n${'='.repeat(80)}`);
+    console.log(`[${timestamp}] REQUEST DETAILS`);
+    console.log(`${'='.repeat(80)}`);
+    console.log(`🌐 URL: ${req.method} ${req.url}`);
+    console.log(`📍 Client IP: ${client.ip}`);
+    console.log(`🖥️  User Agent: ${client.userAgent}`);
+    console.log(`🔗 Referer: ${client.referer}`);
+    console.log(`🌍 Accept-Language: ${client.acceptLanguage}`);
+    console.log(`📁 File Path: ${filePath}`);
+
+    if (fileSize !== null) {
+        console.log(`📊 File Size: ${formatFileSize(fileSize)}`);
+    }
+
+    console.log(`📋 Headers:`);
+    Object.keys(req.headers).forEach(key => {
+        console.log(`   ${key}: ${req.headers[key]}`);
+    });
+
+    if (status >= 200 && status < 300) {
+        console.log(`✅ Status: ${status} - SUCCESS`);
+    } else if (status >= 300 && status < 400) {
+        console.log(`↩️  Status: ${status} - REDIRECT`);
+    } else if (status >= 400 && status < 500) {
+        console.log(`⚠️  Status: ${status} - CLIENT ERROR`);
+    } else if (status >= 500) {
+        console.log(`❌ Status: ${status} - SERVER ERROR`);
+    }
+
+    if (error) {
+        console.log(`💥 Error Details:`);
+        console.log(`   Code: ${error.code || 'Unknown'}`);
+        console.log(`   Message: ${error.message || 'Unknown error'}`);
+        console.log(`   Stack: ${error.stack || 'No stack trace'}`);
+    }
+
+    console.log(`${'='.repeat(80)}\n`);
+};
+
 const PORT = 3000;
 const DIST_DIR = path.join(__dirname, 'dist');
 const PUBLIC_DIR = path.join(__dirname, 'public');
